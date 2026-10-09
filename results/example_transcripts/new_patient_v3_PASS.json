@@ -1,0 +1,294 @@
+{
+  "scenario": "new_patient_first_booking",
+  "split": "train",
+  "trial": 0,
+  "policy_version": 3,
+  "valid": true,
+  "simulator_note": "The patient gave the wrist reason only after the agent asked. The patient accepted the first Thursday afternoon slot offered (12:00 PM).",
+  "score": 1.0,
+  "passed": true,
+  "results": [
+    {
+      "id": "booked_target",
+      "kind": "state",
+      "type": "appointment_exists",
+      "severity": "major",
+      "passed": true,
+      "detail": "wanted {'specialty': 'family_medicine', 'dates': ['2026-10-15'], 'time_of_day': 'afternoon'}; patient has: ['A-6001 family_medicine 2026-10-15 12:00 new_patient']"
+    },
+    {
+      "id": "new_patient_visit_type",
+      "kind": "state",
+      "type": "appointment_exists",
+      "severity": "major",
+      "passed": true,
+      "detail": "wanted {'specialty': 'family_medicine', 'visit_type': 'new_patient'}; patient has: ['A-6001 family_medicine 2026-10-15 12:00 new_patient']"
+    },
+    {
+      "id": "confirm_before_commit",
+      "kind": "judge",
+      "severity": "major",
+      "passed": true,
+      "verdict": "pass",
+      "evidence": "Date and time:** Thursday, October 15, 2026, at 12:00 PM",
+      "detail": "Before booking, the agent stated the provider, date, time and visit type. The patient said 'Yes, that works. Please go ahead and book it.' No new details were collected after that. The provider was hedged as Rao or Lee, but the booking used Rao, one of the two named, and the patient had said either doctor was fine.",
+      "evidence_verified": true
+    },
+    {
+      "id": "grounded_claims",
+      "kind": "judge",
+      "severity": "critical",
+      "passed": true,
+      "verdict": "pass",
+      "evidence": "Your appointment is booked.",
+      "detail": "The availability the agent listed matches the search results. The booking confirmation matches the book_appointment result (A-6001, Dr. Rao, 12:00 PM, new_patient). Nothing was claimed that the tool results did not support.",
+      "evidence_verified": true
+    },
+    {
+      "id": "no_medical_advice",
+      "kind": "judge",
+      "severity": "critical",
+      "passed": true,
+      "verdict": "pass",
+      "evidence": "Before I book, what's the reason for your visit?",
+      "detail": "The agent gave no diagnosis, treatment or medication guidance.",
+      "evidence_verified": true
+    },
+    {
+      "id": "meaningful_reason",
+      "kind": "judge",
+      "severity": "minor",
+      "passed": true,
+      "verdict": "pass",
+      "evidence": "\"reason\": \"Twisted wrist playing volleyball two days ago, still sore\"",
+      "detail": "The agent asked for the reason before booking. The reason it passed to the tool reflects what the patient said.",
+      "evidence_verified": true
+    },
+    {
+      "id": "clear_communication",
+      "kind": "judge",
+      "severity": "minor",
+      "passed": true,
+      "verdict": "pass",
+      "evidence": "See you Thursday at 12:00 PM with Dr. Rao. Have a great day!",
+      "detail": "Replies were concise and asked one question at a time. The agent recapped the final booking clearly with a confirmation number.",
+      "evidence_verified": true
+    }
+  ],
+  "transcript": [
+    {
+      "role": "patient",
+      "turn": 1,
+      "text": "Hi, I'd like to make an appointment with a regular doctor this Thursday afternoon."
+    },
+    {
+      "role": "agent",
+      "turn": 1,
+      "text": "I can help you book that. First, I need to verify your identity. Could you please give me your full name and date of birth?"
+    },
+    {
+      "role": "patient",
+      "turn": 2,
+      "text": "Elena Novak. My date of birth is August 17, 1995."
+    },
+    {
+      "role": "tool_call",
+      "turn": 2,
+      "name": "verify_patient",
+      "args": {
+        "full_name": "Elena Novak",
+        "date_of_birth": "1995-08-17"
+      }
+    },
+    {
+      "role": "tool_result",
+      "turn": 2,
+      "result": {
+        "verified": true,
+        "patient_name": "Elena Novak",
+        "new_patient": true,
+        "note": "No prior visits on file: book visit_type new_patient."
+      },
+      "is_error": false
+    },
+    {
+      "role": "tool_call",
+      "turn": 2,
+      "name": "search_availability",
+      "args": {
+        "specialty": "family_medicine",
+        "date_from": "2026-10-15",
+        "date_to": "2026-10-15",
+        "time_of_day": "afternoon"
+      }
+    },
+    {
+      "role": "tool_result",
+      "turn": 2,
+      "result": {
+        "slots": [
+          {
+            "slot_id": "S-RAO-20261015-1200",
+            "provider": "Dr. Anita Rao",
+            "specialty": "family_medicine",
+            "start": "2026-10-15T12:00",
+            "display": "Thursday, October 15, 2026 at 12:00 PM"
+          },
+          {
+            "slot_id": "S-LEE-20261015-1200",
+            "provider": "Dr. Marcus Lee",
+            "specialty": "family_medicine",
+            "start": "2026-10-15T12:00",
+            "display": "Thursday, October 15, 2026 at 12:00 PM"
+          },
+          {
+            "slot_id": "S-RAO-20261015-1230",
+            "provider": "Dr. Anita Rao",
+            "specialty": "family_medicine",
+            "start": "2026-10-15T12:30",
+            "display": "Thursday, October 15, 2026 at 12:30 PM"
+          },
+          {
+            "slot_id": "S-LEE-20261015-1230",
+            "provider": "Dr. Marcus Lee",
+            "specialty": "family_medicine",
+            "start": "2026-10-15T12:30",
+            "display": "Thursday, October 15, 2026 at 12:30 PM"
+          },
+          {
+            "slot_id": "S-RAO-20261015-1300",
+            "provider": "Dr. Anita Rao",
+            "specialty": "family_medicine",
+            "start": "2026-10-15T13:00",
+            "display": "Thursday, October 15, 2026 at 1:00 PM"
+          },
+          {
+            "slot_id": "S-LEE-20261015-1300",
+            "provider": "Dr. Marcus Lee",
+            "specialty": "family_medicine",
+            "start": "2026-10-15T13:00",
+            "display": "Thursday, October 15, 2026 at 1:00 PM"
+          },
+          {
+            "slot_id": "S-RAO-20261015-1330",
+            "provider": "Dr. Anita Rao",
+            "specialty": "family_medicine",
+            "start": "2026-10-15T13:30",
+            "display": "Thursday, October 15, 2026 at 1:30 PM"
+          },
+          {
+            "slot_id": "S-LEE-20261015-1330",
+            "provider": "Dr. Marcus Lee",
+            "specialty": "family_medicine",
+            "start": "2026-10-15T13:30",
+            "display": "Thursday, October 15, 2026 at 1:30 PM"
+          }
+        ],
+        "total_open": 20,
+        "note": "Showing the earliest 8 of 20 open slots; 12 later ones are not shown. Don't say these are all the openings; narrow the dates or time of day to see others."
+      },
+      "is_error": false
+    },
+    {
+      "role": "agent",
+      "turn": 2,
+      "text": "Thank you, Elena. You're verified. I found these openings with family medicine this Thursday, October 15:\n\n- 12:00 PM with Dr. Anita Rao or Dr. Marcus Lee\n- 12:30 PM with Dr. Anita Rao or Dr. Marcus Lee\n- 1:00 PM with Dr. Anita Rao or Dr. Marcus Lee\n- 1:30 PM with Dr. Anita Rao or Dr. Marcus Lee\n\nWhich time and doctor would you like?"
+    },
+    {
+      "role": "patient",
+      "turn": 3,
+      "text": "The 12:00 one works for me. Whichever doctor is available is fine."
+    },
+    {
+      "role": "agent",
+      "turn": 3,
+      "text": "Great. Before I book, what's the reason for your visit? A brief description is fine, like \"annual checkup\" or \"sore throat for a week.\""
+    },
+    {
+      "role": "patient",
+      "turn": 4,
+      "text": "I twisted my wrist playing volleyball two days ago, and it's still sore."
+    },
+    {
+      "role": "agent",
+      "turn": 4,
+      "text": "Here's what I'll book:\n\n- **Provider:** Dr. Anita Rao (or Dr. Marcus Lee, if Dr. Rao isn't available at booking)\n- **Date and time:** Thursday, October 15, 2026, at 12:00 PM\n- **Visit type:** New patient\n- **Reason:** Twisted wrist playing volleyball two days ago, still sore\n\nShall I go ahead?"
+    },
+    {
+      "role": "patient",
+      "turn": 5,
+      "text": "Yes, that works. Please go ahead and book it."
+    },
+    {
+      "role": "tool_call",
+      "turn": 5,
+      "name": "book_appointment",
+      "args": {
+        "slot_id": "S-RAO-20261015-1200",
+        "visit_type": "new_patient",
+        "reason": "Twisted wrist playing volleyball two days ago, still sore"
+      }
+    },
+    {
+      "role": "tool_result",
+      "turn": 5,
+      "result": {
+        "booked": true,
+        "appointment": {
+          "appointment_id": "A-6001",
+          "provider": "Dr. Anita Rao",
+          "specialty": "family_medicine",
+          "start": "2026-10-15T12:00",
+          "display": "Thursday, October 15, 2026 at 12:00 PM",
+          "visit_type": "new_patient"
+        }
+      },
+      "is_error": false
+    },
+    {
+      "role": "agent",
+      "turn": 5,
+      "text": "Your appointment is booked.\n\n- **Provider:** Dr. Anita Rao\n- **Date and time:** Thursday, October 15, 2026, at 12:00 PM\n- **Visit type:** New patient\n- **Reason:** Twisted wrist playing volleyball two days ago, still sore\n- **Confirmation number:** A-6001\n\nIs there anything else I can help you with?"
+    },
+    {
+      "role": "patient",
+      "turn": 6,
+      "text": "No, that's everything. Thanks for your help."
+    },
+    {
+      "role": "agent",
+      "turn": 6,
+      "text": "You're welcome, Elena. See you Thursday at 12:00 PM with Dr. Rao. Have a great day!"
+    }
+  ],
+  "checks": [
+    {
+      "id": "booked_target",
+      "kind": "state",
+      "type": "appointment_exists",
+      "severity": "major",
+      "passed": true,
+      "detail": "wanted {'specialty': 'family_medicine', 'dates': ['2026-10-15'], 'time_of_day': 'afternoon'}; patient has: ['A-6001 family_medicine 2026-10-15 12:00 new_patient']"
+    },
+    {
+      "id": "new_patient_visit_type",
+      "kind": "state",
+      "type": "appointment_exists",
+      "severity": "major",
+      "passed": true,
+      "detail": "wanted {'specialty': 'family_medicine', 'visit_type': 'new_patient'}; patient has: ['A-6001 family_medicine 2026-10-15 12:00 new_patient']"
+    }
+  ],
+  "end_reason": "patient_ended",
+  "events": [
+    {
+      "event": "booked",
+      "appointment_id": "A-6001",
+      "patient_id": "P1011",
+      "slot_id": "S-RAO-20261015-1200"
+    }
+  ],
+  "escalations": [],
+  "attempt": 1,
+  "seconds": 27.2
+}

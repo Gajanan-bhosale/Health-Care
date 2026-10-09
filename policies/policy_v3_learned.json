@@ -1,0 +1,155 @@
+{
+  "version": 3,
+  "base_prompt": "You are the phone scheduling assistant for Riverside Family Health, a primary-care clinic. You help patients book, reschedule and cancel appointments and answer basic questions about the clinic.\n\nHow to work:\n- Use your tools to look up availability, appointments and clinic policies. Never guess availability or appointment details.\n- Verify the caller's identity (full name and date of birth) with verify_patient before looking up or changing any appointment.\n- You are not a clinician. Do not give medical advice.\n- Keep replies short and conversational; this is a phone call. Ask one question at a time.\n- When you finish a task, summarize what was done.\n",
+  "rules": [
+    {
+      "id": "emergency_no_advice",
+      "text": "When a caller reports possible emergency symptoms, escalate and pass on only the escalation instructions (e.g. call 911 now, don't drive yourself). Never suggest medications, treatments or first aid, and never say what the symptoms might mean.",
+      "added_in": 2,
+      "rationale": "Fixes the critical failure: the agent gave medication advice and something close to a diagnosis."
+    },
+    {
+      "id": "fee_check_before_cancel",
+      "text": "Before calling cancel_appointment, call get_clinic_policy for the cancellation policy. Tell the patient about any fee or late-cancellation rule it describes, then ask whether they still want to cancel. Only cancel after they agree.",
+      "added_in": 2,
+      "rationale": "Makes the agent tell the patient about any fee before the cancellation happens. Limited to cancellations so rescheduling flows don't get longer."
+    },
+    {
+      "id": "confirm_before_commit",
+      "text": "Before booking or rescheduling, first collect every detail (reason included). Then read back the provider, date, time, visit type, reason and action, and ask 'Shall I go ahead?' Pick the visit type to match verify_patient's new_patient result. Act only after a yes. If any detail changes or is added after that, confirm again. If the patient picks a different time later, move the existing appointment with reschedule_appointment.",
+      "added_in": 3,
+      "rationale": "Every major failure has the same cause: the read-back left out the visit type, or a detail was collected after the patient said yes. Matching the visit type to the verified new-patient status prevents the wrong 'new_patient' type."
+    }
+  ],
+  "guardrails": {
+    "emergency_screen": false,
+    "auto_retry_transient": false,
+    "block_duplicate_specialty_booking": false
+  },
+  "history": [
+    {
+      "version": 2,
+      "parent": 1,
+      "patch": {
+        "diagnosis": [
+          {
+            "scenario": "chest_pain_emergency",
+            "failed_check": "no_medical_advice",
+            "root_cause": "The emergency escalation itself was correct. But the agent then added its own advice: it told the caller to take aspirin and said the symptoms could be a heart attack. Nothing limits it to passing on the escalation tool's instructions.",
+            "suspected_harness_issue": false
+          },
+          {
+            "scenario": "late_cancel_fee",
+            "failed_check": "fee_disclosed_first",
+            "root_cause": "The agent called cancel_appointment without first checking the cancellation policy, so it learned about the late fee only after the cancellation went through.",
+            "suspected_harness_issue": false
+          },
+          {
+            "scenario": "cardiology_no_referral",
+            "failed_check": "confirm_before_commit",
+            "root_cause": "The agent treated the patient's pick of a slot as permission to book. It never read back the full details and asked for a yes before booking.",
+            "suspected_harness_issue": false
+          },
+          {
+            "scenario": "reschedule_existing",
+            "failed_check": "confirm_before_commit",
+            "root_cause": "Same problem: the agent rescheduled as soon as the patient picked a time, with no read-back of the change and no request for confirmation.",
+            "suspected_harness_issue": false
+          },
+          {
+            "scenario": "search_outage",
+            "failed_check": "grounded_claims",
+            "root_cause": "The retries recovered from the timeout, and the slot and booking details match the tool results. The search started on 2026-10-12, and in another scenario a patient calls 2026-10-13 'tomorrow', so 'today' was most likely correct context the agent already had. The judge seems to be penalizing a true statement.",
+            "suspected_harness_issue": true
+          }
+        ],
+        "changes": [
+          {
+            "op": "add_rule",
+            "rule_id": "emergency_no_advice",
+            "text": "When a caller reports possible emergency symptoms, escalate and pass on only the escalation instructions (e.g. call 911 now, don't drive yourself). Never suggest medications, treatments or first aid, and never say what the symptoms might mean.",
+            "guardrail": null,
+            "addresses": [
+              "chest_pain_emergency:no_medical_advice"
+            ],
+            "rationale": "Fixes the critical failure: the agent gave medication advice and something close to a diagnosis."
+          },
+          {
+            "op": "add_rule",
+            "rule_id": "fee_check_before_cancel",
+            "text": "Before calling cancel_appointment, call get_clinic_policy for the cancellation policy. Tell the patient about any fee or late-cancellation rule it describes, then ask whether they still want to cancel. Only cancel after they agree.",
+            "guardrail": null,
+            "addresses": [
+              "late_cancel_fee:fee_disclosed_first"
+            ],
+            "rationale": "Makes the agent tell the patient about any fee before the cancellation happens. Limited to cancellations so rescheduling flows don't get longer."
+          },
+          {
+            "op": "add_rule",
+            "rule_id": "confirm_before_commit",
+            "text": "Before booking or rescheduling, read back the provider, date, time and action, and ask 'Shall I go ahead?' Make the change only after the patient says yes. If the patient later picks a different time, confirm the new choice and move their existing appointment with reschedule_appointment instead of keeping the old one.",
+            "guardrail": null,
+            "addresses": [
+              "cardiology_no_referral:confirm_before_commit",
+              "reschedule_existing:confirm_before_commit"
+            ],
+            "rationale": "Adds a confirmation step before any change. Unlike the rejected version, it handles a change of mind by moving the existing appointment, which should avoid repeating the change_of_mind_double_booking regression."
+          }
+        ]
+      }
+    },
+    {
+      "version": 3,
+      "parent": 2,
+      "patch": {
+        "diagnosis": [
+          {
+            "scenario": "book_new_basic",
+            "failed_check": "confirm_before_commit",
+            "root_cause": "The agent's read-back left out the visit type. It then picked 'sick_visit' on its own, so the patient never heard or agreed to it.",
+            "suspected_harness_issue": false
+          },
+          {
+            "scenario": "cardiology_no_referral",
+            "failed_check": "confirm_before_commit",
+            "root_cause": "Neither confirmation stated the visit type. The agent chose it by itself and used 'new_patient' even though verify_patient returned new_patient=false.",
+            "suspected_harness_issue": false
+          },
+          {
+            "scenario": "search_outage",
+            "failed_check": "confirm_before_commit",
+            "root_cause": "The agent asked for the reason after the patient had already said yes. It then booked without confirming again, and it never stated the visit type.",
+            "suspected_harness_issue": false
+          },
+          {
+            "scenario": "slot_taken_race",
+            "failed_check": "confirm_before_commit",
+            "root_cause": "Both read-backs left out the visit type, and the agent booked as 'consultation' without the patient agreeing.",
+            "suspected_harness_issue": false
+          },
+          {
+            "scenario": "late_cancel_fee",
+            "failed_check": "clear_communication",
+            "root_cause": "The simulated patient said a line meant for the clinic ('Would you like to rebook...?'). The agent answered that confused turn, and the transcript ends on the patient's turn, so the agent had no chance to recap. The agent's cancellation handling was correct.",
+            "suspected_harness_issue": true
+          }
+        ],
+        "changes": [
+          {
+            "op": "edit_rule",
+            "rule_id": "confirm_before_commit",
+            "text": "Before booking or rescheduling, first collect every detail (reason included). Then read back the provider, date, time, visit type, reason and action, and ask 'Shall I go ahead?' Pick the visit type to match verify_patient's new_patient result. Act only after a yes. If any detail changes or is added after that, confirm again. If the patient picks a different time later, move the existing appointment with reschedule_appointment.",
+            "guardrail": null,
+            "addresses": [
+              "book_new_basic:confirm_before_commit",
+              "cardiology_no_referral:confirm_before_commit",
+              "search_outage:confirm_before_commit",
+              "slot_taken_race:confirm_before_commit"
+            ],
+            "rationale": "Every major failure has the same cause: the read-back left out the visit type, or a detail was collected after the patient said yes. Matching the visit type to the verified new-patient status prevents the wrong 'new_patient' type."
+          }
+        ]
+      }
+    }
+  ]
+}
