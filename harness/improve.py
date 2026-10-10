@@ -226,12 +226,12 @@ def gate(prev: dict, cand: dict, recheck) -> dict:
 
 
 def improve(llm, policy: Policy, run_dir: Path, iterations: int = 3, trials: int = 1,
-            confirm_trials: int = 0, log=print) -> dict:
+            confirm_trials: int = 0, log=print, scenario_ids: list[str] | None = None) -> dict:
     run_dir.mkdir(parents=True, exist_ok=True)
     policy.save(run_dir / f"policy_v{policy.version}.json")
     log(f"[baseline] running suite with policy v{policy.version}")
     best_dir = run_dir / f"iter0_v{policy.version}"
-    best = run_suite(llm, policy, best_dir, trials)
+    best = run_suite(llm, policy, best_dir, trials, scenario_ids)
     baseline = best
     log(f"[baseline] {best['summary']}")
     record = {"baseline": {"policy": policy.summary(), "result": best, "dir": best_dir.name},
@@ -252,7 +252,7 @@ def improve(llm, policy: Policy, run_dir: Path, iterations: int = 3, trials: int
         cand = apply_patch(policy, patch, next_version)
         cand_dir = run_dir / f"iter{it}_v{cand.version}"
         log(f"[iter {it}] candidate v{cand.version}: {[c.op + ':' + (c.rule_id or c.guardrail or '') for c in patch.changes]}")
-        cand_res = run_suite(llm, cand, cand_dir, trials)
+        cand_res = run_suite(llm, cand, cand_dir, trials, scenario_ids)
         log(f"[iter {it}] candidate {cand_res['summary']}")
         decision = gate(best, cand_res,
                         lambda ids: run_suite(llm, cand, cand_dir / "recheck", trials, ids))
@@ -282,8 +282,8 @@ def improve(llm, policy: Policy, run_dir: Path, iterations: int = 3, trials: int
         log(f"[confirm] fresh re-run of v0 and final with {confirm_trials} trials each")
         v0 = Policy.load(run_dir / f"policy_v{record['baseline']['policy']['version']}.json")
         record["confirm"] = {
-            "baseline": run_suite(llm, v0, run_dir / "confirm_baseline", confirm_trials),
-            "final": run_suite(llm, policy, run_dir / "confirm_final", confirm_trials),
+            "baseline": run_suite(llm, v0, run_dir / "confirm_baseline", confirm_trials, scenario_ids),
+            "final": run_suite(llm, policy, run_dir / "confirm_final", confirm_trials, scenario_ids),
         }
     record["baseline_result"] = baseline
     (run_dir / "loop.json").write_text(json.dumps(record, indent=2, default=str), encoding="utf-8")
@@ -298,10 +298,12 @@ def main() -> None:
     ap.add_argument("--iterations", type=int, default=3)
     ap.add_argument("--trials", type=int, default=1)
     ap.add_argument("--confirm-trials", type=int, default=0)
+    ap.add_argument("--scenarios", help="comma-separated subset (e.g. for a quick demo); default: all")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     run_dir = Path(a.out or ROOT / "runs" / f"loop_{time.strftime('%Y%m%d_%H%M%S')}")
-    improve(AnthropicLLM(), Policy.load(a.policy), run_dir, a.iterations, a.trials, a.confirm_trials)
+    improve(AnthropicLLM(), Policy.load(a.policy), run_dir, a.iterations, a.trials, a.confirm_trials,
+            scenario_ids=a.scenarios.split(",") if a.scenarios else None)
     (run_dir / "usage.json").write_text(json.dumps(USAGE.snapshot(), indent=2), encoding="utf-8")
     print(f"report: {run_dir / 'REPORT.md'}")
 

@@ -95,6 +95,8 @@ SEED_PATIENTS = [
     Patient("P1009", "Hannah Kim", "2001-12-03", "555-0175"),
     Patient("P1010", "Arjun Mehta", "1999-02-11", "555-0125", new_patient=True),
     Patient("P1011", "Elena Novak", "1995-08-17", "555-0158", new_patient=True),
+    Patient("P1012", "Gajanan Bhosale", "2001-04-29", "555-0159", new_patient=True),
+
 ]
 
 SEED_APPOINTMENTS = [
