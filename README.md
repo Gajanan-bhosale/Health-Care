@@ -193,7 +193,3 @@ what it taught, fresh A/B re-runs, and the remaining failures. The evidence is i
 loop reports with every patch and gate decision, A/B tables, and example transcripts, including
 v0 telling a chest-pain caller to chew aspirin and v2 not doing so. Full raw runs land in `runs/`
 (gitignored).
-
-python -m scheduler.chat --policy policies/policy_v0.json
-
-python -m harness.improve --policy policies/policy_v0.json --scenarios late_cancel_fee,reschedule_existing,chest_pain_emergency,book_new_basic,duplicate_name --iterations 2 --out runs/demo_live
